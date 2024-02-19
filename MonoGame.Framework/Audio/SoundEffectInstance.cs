@@ -1,4 +1,4 @@
-﻿// MonoGame - Copyright (C) The MonoGame Team
+﻿// MonoGame - Copyright (C) MonoGame Foundation, Inc
 // This file is subject to the terms and conditions defined in
 // file 'LICENSE.txt', which is part of this source code package.
 
@@ -158,8 +158,6 @@ namespace Microsoft.Xna.Framework.Audio
             {
                 if (!SoundEffectInstancePool.SoundsAvailable)
                     throw new InstancePlayLimitException();
-
-                SoundEffectInstancePool.Remove(this);
             }
             
             // For non-XAct sounds we need to be sure the latest
@@ -168,6 +166,7 @@ namespace Microsoft.Xna.Framework.Audio
                 PlatformSetVolume(_volume * SoundEffect.MasterVolume);
 
             PlatformPlay();
+            SoundEffectInstancePool.Remove(this);
         }
 
         /// <summary>Resumes playback for a SoundEffectInstance.</summary>

@@ -1,4 +1,4 @@
-﻿// MonoGame - Copyright (C) The MonoGame Team
+﻿// MonoGame - Copyright (C) MonoGame Foundation, Inc
 // This file is subject to the terms and conditions defined in
 // file 'LICENSE.txt', which is part of this source code package.
 
@@ -21,7 +21,8 @@ namespace Microsoft.Xna.Framework.Content.Pipeline.Graphics
                     platform == TargetPlatform.Windows ||
                     platform == TargetPlatform.WindowsPhone8 ||
                     platform == TargetPlatform.WindowsStoreApp ||
-                    platform == TargetPlatform.iOS;
+                    platform == TargetPlatform.iOS ||
+                    platform == TargetPlatform.Web;
         }
 
         private static bool IsCompressedTextureFormat(TextureProcessorOutputFormat format)
@@ -63,10 +64,11 @@ namespace Microsoft.Xna.Framework.Content.Pipeline.Graphics
                             platform == TargetPlatform.WindowsStoreApp ||
                             platform == TargetPlatform.DesktopGL ||
                             platform == TargetPlatform.MacOSX ||
-                            platform == TargetPlatform.NativeClient)
+                            platform == TargetPlatform.NativeClient ||
+                            platform == TargetPlatform.Web)
                 {
                     if (format != TextureProcessorOutputFormat.DxtCompressed)
-                        throw new PlatformNotSupportedException(format + " platform only supports DXT texture compression");
+                        throw new PlatformNotSupportedException(platform + " platform only supports DXT texture compression");
                 }
             }
 

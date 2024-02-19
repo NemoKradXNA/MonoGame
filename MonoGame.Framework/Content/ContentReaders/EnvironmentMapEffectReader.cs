@@ -1,4 +1,4 @@
-﻿// MonoGame - Copyright (C) The MonoGame Team
+﻿// MonoGame - Copyright (C) MonoGame Foundation, Inc
 // This file is subject to the terms and conditions defined in
 // file 'LICENSE.txt', which is part of this source code package.
 
@@ -11,7 +11,7 @@ namespace Microsoft.Xna.Framework.Content
     {
         protected internal override EnvironmentMapEffect Read(ContentReader input, EnvironmentMapEffect existingInstance)
         {
-            var effect = new EnvironmentMapEffect(input.GraphicsDevice);
+            var effect = new EnvironmentMapEffect(input.GetGraphicsDevice());
             effect.Texture = input.ReadExternalReference<Texture>() as Texture2D;
 			effect.EnvironmentMap = input.ReadExternalReference<TextureCube>() as TextureCube;
 			effect.EnvironmentMapAmount = input.ReadSingle ();

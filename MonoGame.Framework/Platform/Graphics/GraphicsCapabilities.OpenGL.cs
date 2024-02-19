@@ -1,4 +1,4 @@
-// MonoGame - Copyright (C) The MonoGame Team
+// MonoGame - Copyright (C) MonoGame Foundation, Inc
 // This file is subject to the terms and conditions defined in
 // file 'LICENSE.txt', which is part of this source code package.
 
@@ -66,6 +66,12 @@ namespace Microsoft.Xna.Framework.Graphics
             SupportsAtitc = GL.Extensions.Contains("GL_ATI_texture_compression_atitc") ||
                             GL.Extensions.Contains("GL_AMD_compressed_ATC_texture");
 
+            if (GL.BoundApi == GL.RenderApi.ES)
+            {
+                SupportsEtc2 = device.glMajorVersion >= 3;
+            }
+
+
             // Framebuffer objects
 #if GLES
             SupportsFramebufferObjectARB = GL.BoundApi == GL.RenderApi.ES && (device.glMajorVersion >= 2 || GL.Extensions.Contains("GL_ARB_framebuffer_object")); // always supported on GLES 2.0+
@@ -114,6 +120,8 @@ namespace Microsoft.Xna.Framework.Graphics
             GL.GetInteger((GetPName)GetParamName.MaxSamples, out _maxMultiSampleCount);
 
             SupportsInstancing = GL.VertexAttribDivisor != null;
+
+            SupportsBaseIndexInstancing = GL.DrawElementsInstancedBaseInstance != null;
 
 #if GLES
             SupportsSeparateBlendStates = false;

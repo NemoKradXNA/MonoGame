@@ -1,4 +1,4 @@
-// MonoGame - Copyright (C) The MonoGame Team
+// MonoGame - Copyright (C) MonoGame Foundation, Inc
 // This file is subject to the terms and conditions defined in
 // file 'LICENSE.txt', which is part of this source code package.
 
@@ -14,7 +14,6 @@ namespace Microsoft.Xna.Framework.Graphics.PackedVector
 		/// <summary>
 		/// Gets and sets the packed value.
 		/// </summary>
-		[CLSCompliant(false)]
 		public ulong PackedValue
 		{
 			get
@@ -126,10 +125,10 @@ namespace Microsoft.Xna.Framework.Graphics.PackedVector
 		private static ulong Pack(float x, float y, float z, float w)
 		{
 			return (ulong) (
-				(((ulong)Math.Round(MathHelper.Clamp(x * 0xFFFF, 0, 65535f)) ) ) |
-				(((ulong)Math.Round(MathHelper.Clamp(y * 0xFFFF, 0, 65535f)) ) << 16) |
-                (((ulong)Math.Round(MathHelper.Clamp(z * 0xFFFF, 0, 65535f)) ) << 32) |
-				(((ulong)Math.Round(MathHelper.Clamp(w * 0xFFFF, 0, 65535f)) ) << 48)
+				(((ulong)MathF.Round(MathHelper.Clamp(x * 0xFFFF, 0, 65535f)) ) ) |
+				(((ulong)MathF.Round(MathHelper.Clamp(y * 0xFFFF, 0, 65535f)) ) << 16) |
+                (((ulong)MathF.Round(MathHelper.Clamp(z * 0xFFFF, 0, 65535f)) ) << 32) |
+				(((ulong)MathF.Round(MathHelper.Clamp(w * 0xFFFF, 0, 65535f)) ) << 48)
             );
 		}
 	}

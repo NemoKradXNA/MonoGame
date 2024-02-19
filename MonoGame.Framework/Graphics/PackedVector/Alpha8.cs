@@ -1,4 +1,4 @@
-// MonoGame - Copyright (C) The MonoGame Team
+// MonoGame - Copyright (C) MonoGame Foundation, Inc
 // This file is subject to the terms and conditions defined in
 // file 'LICENSE.txt', which is part of this source code package.
 
@@ -16,7 +16,6 @@ namespace Microsoft.Xna.Framework.Graphics.PackedVector
         /// <summary>
         /// Gets and sets the packed value.
         /// </summary>
-        [CLSCompliant(false)]
         public byte PackedValue
         {
             get
@@ -108,11 +107,29 @@ namespace Microsoft.Xna.Framework.Graphics.PackedVector
             return packedValue.GetHashCode();
         }
 
+        /// <summary>
+        /// Compares the current instance of a class to another instance to determine
+        /// whether they are the same.
+        /// </summary>
+        /// <param name="lhs">The object on the left of the equality operator.</param>
+        /// <param name="rhs">The object on the right of the equality operator.</param>
+        /// <returns>
+        /// <see langword="true"/> if the objects are the same; <see langword="false"/> otherwise.
+        /// </returns>
         public static bool operator ==(Alpha8 lhs, Alpha8 rhs)
         {
             return lhs.packedValue == rhs.packedValue;
         }
 
+        /// <summary>
+        /// Compares teh current instance of a class to another instance to determine
+        /// whether they are different.
+        /// </summary>
+        /// <param name="lhs">The object to the left of the inequality operator.</param>
+        /// <param name="rhs">The object to the right of the inequality operator.</param>
+        /// <returns>
+        /// <see langword="true"/> if the objects are different; <see langword="false"/> otherwise.
+        /// </returns>
         public static bool operator !=(Alpha8 lhs, Alpha8 rhs)
         {
             return lhs.packedValue != rhs.packedValue;
@@ -120,7 +137,7 @@ namespace Microsoft.Xna.Framework.Graphics.PackedVector
 
         private static byte Pack(float alpha)
         {
-            return (byte) Math.Round(
+            return (byte) MathF.Round(
                 MathHelper.Clamp(alpha, 0, 1) * 255.0f
             );
         }

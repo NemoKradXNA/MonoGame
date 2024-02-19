@@ -1,4 +1,4 @@
-// MonoGame - Copyright (C) The MonoGame Team
+// MonoGame - Copyright (C) MonoGame Foundation, Inc
 // This file is subject to the terms and conditions defined in
 // file 'LICENSE.txt', which is part of this source code package.
 
@@ -6,7 +6,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
-using MonoGame.Utilities;
+using MonoGame.Framework.Utilities;
 using System.Runtime.InteropServices;
 
 
@@ -80,7 +80,7 @@ namespace Microsoft.Xna.Framework.Graphics
         private IndexBuffer _indexBuffer;
         private bool _indexBufferDirty;
 
-        private readonly RenderTargetBinding[] _currentRenderTargetBindings = new RenderTargetBinding[4];
+        private readonly RenderTargetBinding[] _currentRenderTargetBindings = new RenderTargetBinding[8];
         private int _currentRenderTargetCount;
         private readonly RenderTargetBinding[] _tempRenderTargetBinding = new RenderTargetBinding[1];
 
@@ -1315,7 +1315,7 @@ namespace Microsoft.Xna.Framework.Graphics
         public void DrawInstancedPrimitives(PrimitiveType primitiveType, int baseVertex, int minVertexIndex,
                                             int numVertices, int startIndex, int primitiveCount, int instanceCount)
         {
-            DrawInstancedPrimitives(primitiveType, baseVertex, startIndex, primitiveCount, instanceCount);
+            DrawInstancedPrimitives(primitiveType, baseVertex, startIndex, primitiveCount, 0, instanceCount);
         }
 
         /// <summary>
@@ -1329,6 +1329,21 @@ namespace Microsoft.Xna.Framework.Graphics
         /// <remarks>Draw geometry with data from multiple bound vertex streams at different frequencies.</remarks>
         public void DrawInstancedPrimitives(PrimitiveType primitiveType, int baseVertex, int startIndex, int primitiveCount, int instanceCount)
         {
+            DrawInstancedPrimitives(primitiveType, baseVertex, startIndex, primitiveCount, 0, instanceCount);
+        }
+
+        /// <summary>
+        /// Draw instanced geometry from the bound vertex buffers and index buffer.
+        /// </summary>
+        /// <param name="primitiveType">The type of primitives in the index buffer.</param>
+        /// <param name="baseVertex">Used to offset the vertex range indexed from the vertex buffer.</param>
+        /// <param name="startIndex">The index within the index buffer to start drawing from.</param>
+        /// <param name="primitiveCount">The number of primitives in a single instance.</param>
+        /// <param name="baseInstance">Used to offset the instance range indexed from the instance buffer.</param>
+        /// <param name="instanceCount">The number of instances to render.</param>
+        /// <remarks>Draw geometry with data from multiple bound vertex streams at different frequencies.</remarks>
+        public void DrawInstancedPrimitives(PrimitiveType primitiveType, int baseVertex, int startIndex, int primitiveCount, int baseInstance, int instanceCount)
+        {
             if (_vertexShader == null)
                 throw new InvalidOperationException("Vertex shader must be set before calling DrawInstancedPrimitives.");
 
@@ -1341,7 +1356,7 @@ namespace Microsoft.Xna.Framework.Graphics
             if (primitiveCount <= 0)
                 throw new ArgumentOutOfRangeException("primitiveCount");
 
-            PlatformDrawInstancedPrimitives(primitiveType, baseVertex, startIndex, primitiveCount, instanceCount);
+            PlatformDrawInstancedPrimitives(primitiveType, baseVertex, startIndex, primitiveCount, baseInstance, instanceCount);
 
             unchecked
             {
@@ -1420,6 +1435,8 @@ namespace Microsoft.Xna.Framework.Graphics
                     return primitiveCount * 3;
                 case PrimitiveType.TriangleStrip:
                     return primitiveCount + 2;
+                case PrimitiveType.PointList:
+                    return primitiveCount;
             }
 
             throw new NotSupportedException();

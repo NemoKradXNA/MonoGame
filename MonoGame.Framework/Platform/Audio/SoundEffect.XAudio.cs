@@ -1,4 +1,4 @@
-// MonoGame - Copyright (C) The MonoGame Team
+// MonoGame - Copyright (C) MonoGame Foundation, Inc
 // This file is subject to the terms and conditions defined in
 // file 'LICENSE.txt', which is part of this source code package.
 
@@ -152,8 +152,8 @@ namespace Microsoft.Xna.Framework.Audio
         {
             // NOTE: We make a copy here because old versions of 
             // DataStream.Create didn't work correctly for offsets.
-            var data = new byte[length - offset];
-            Buffer.BlockCopy(buffer, offset, data, 0, length - offset);
+            var data = new byte[length];
+            Buffer.BlockCopy(buffer, offset, data, 0, length);
 
             return DataStream.Create(data, true, false);
         }
@@ -196,7 +196,7 @@ namespace Microsoft.Xna.Framework.Audio
             {
                 duration = TimeSpan.FromSeconds((float)loopLength / sampleRate);
 
-                CreateBuffers(  new WaveFormatAdpcm(sampleRate, channels, blockAlignment),
+                CreateBuffers(  new WaveFormatAdpcm(sampleRate, channels, (blockAlignment + 22) * channels),
                                 ToDataStream(0, buffer, buffer.Length),
                                 loopStart,
                                 loopLength);

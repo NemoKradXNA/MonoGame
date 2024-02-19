@@ -1,4 +1,4 @@
-// MonoGame - Copyright (C) The MonoGame Team
+// MonoGame - Copyright (C) MonoGame Foundation, Inc
 // This file is subject to the terms and conditions defined in
 // file 'LICENSE.txt', which is part of this source code package.
 
@@ -6,7 +6,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using Microsoft.Xna.Framework.Graphics;
-using MonoGame.Utilities;
+using MonoGame.Framework.Utilities;
 
 namespace Microsoft.Xna.Framework.Content
 {
@@ -30,6 +30,9 @@ namespace Microsoft.Xna.Framework.Content
 					}
 					else if (ReflectionHelpers.IsAssignableFromType(typeof(int), itemType)) {
 						parameter.SetValue((int) item.Value);
+					}
+					else if (ReflectionHelpers.IsAssignableFromType(typeof(int[]), itemType)) {
+						parameter.SetValue((int[]) item.Value);
 					}
 					else if (ReflectionHelpers.IsAssignableFromType(typeof(bool), itemType)) {
 						parameter.SetValue((bool) item.Value);

@@ -1,4 +1,4 @@
-// MonoGame - Copyright (C) The MonoGame Team
+// MonoGame - Copyright (C) MonoGame Foundation, Inc
 // This file is subject to the terms and conditions defined in
 // file 'LICENSE.txt', which is part of this source code package.
 
@@ -15,9 +15,10 @@ namespace Microsoft.Xna.Framework.Content
         protected internal override Effect Read(ContentReader input, Effect existingInstance)
         {
             int dataSize = input.ReadInt32();
-            byte[] data = input.ContentManager.GetScratchBuffer(dataSize);
+            byte[] data = ContentManager.ScratchBufferPool.Get(dataSize);
             input.Read(data, 0, dataSize);
-            var effect = new Effect(input.GraphicsDevice, data, 0, dataSize);
+            var effect = new Effect(input.GetGraphicsDevice(), data, 0, dataSize);
+            ContentManager.ScratchBufferPool.Return(data);
             effect.Name = input.AssetName;
             return effect;
         }

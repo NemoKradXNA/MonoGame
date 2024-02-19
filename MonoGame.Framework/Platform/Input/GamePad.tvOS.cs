@@ -1,4 +1,4 @@
-﻿// MonoGame - Copyright (C) The MonoGame Team
+﻿// MonoGame - Copyright (C) MonoGame Foundation, Inc
 // This file is subject to the terms and conditions defined in
 // file 'LICENSE.txt', which is part of this source code package.
 using GameController;
@@ -159,7 +159,7 @@ namespace Microsoft.Xna.Framework.Input
             return state;
         }
 
-        private static bool PlatformSetVibration(int index, float leftMotor, float rightMotor)
+        private static bool PlatformSetVibration(int index, float leftMotor, float rightMotor, float leftTrigger, float rightTrigger)
         {
             return false;
         }

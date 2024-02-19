@@ -1,4 +1,4 @@
-﻿// MonoGame - Copyright (C) The MonoGame Team
+﻿// MonoGame - Copyright (C) MonoGame Foundation, Inc
 // This file is subject to the terms and conditions defined in
 // file 'LICENSE.txt', which is part of this source code package.
 
@@ -63,13 +63,6 @@ namespace Microsoft.Xna.Framework.Content.Pipeline
         NativeClient,
 
         /// <summary>
-        /// Sony PlayStation Mobile (PS Vita)
-        /// (MonoGame)
-        /// </summary>
-        [Obsolete("PlayStation Mobile is no longer supported")]
-        PlayStationMobile,
-
-        /// <summary>
         /// Windows Phone 8
         /// (MonoGame)
         /// </summary>
@@ -87,10 +80,10 @@ namespace Microsoft.Xna.Framework.Content.Pipeline
         PlayStation4,
 
         /// <summary>
-        /// PlayStation Vita
+        /// Sony PlayStation5
         /// </summary>
-        PSVita,
-       
+        PlayStation5,
+
         /// <summary>
         /// Xbox One
         /// </summary>
@@ -100,6 +93,16 @@ namespace Microsoft.Xna.Framework.Content.Pipeline
         /// Nintendo Switch
         /// </summary>
         Switch,
+
+        /// <summary>
+        /// Google Stadia
+        /// </summary>
+        Stadia,
+
+        /// <summary>
+        /// WebAssembly and Bridge.NET
+        /// </summary>
+        Web
     }
 
 

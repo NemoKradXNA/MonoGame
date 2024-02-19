@@ -1,4 +1,4 @@
-// MonoGame - Copyright (C) The MonoGame Team
+// MonoGame - Copyright (C) MonoGame Foundation, Inc
 // This file is subject to the terms and conditions defined in
 // file 'LICENSE.txt', which is part of this source code package.
 
@@ -31,7 +31,6 @@ namespace Microsoft.Xna.Framework.Graphics.PackedVector
 			return a.Equals (b);
 		}
 
-        [CLSCompliant(false)]
         public uint PackedValue
         {
             get
@@ -81,8 +80,8 @@ namespace Microsoft.Xna.Framework.Graphics.PackedVector
 
 			// clamp the value between min and max values
             // Round rather than truncate.
-            var word2 = (uint)((int)MathHelper.Clamp((float)Math.Round(vectorX * maxPos), minNeg, maxPos) & 0xFFFF);
-            var word1 = (uint)(((int)MathHelper.Clamp((float)Math.Round(vectorY * maxPos), minNeg, maxPos) & 0xFFFF) << 0x10);
+            var word2 = (uint)((int)MathHelper.Clamp(MathF.Round(vectorX * maxPos), minNeg, maxPos) & 0xFFFF);
+            var word1 = (uint)(((int)MathHelper.Clamp(MathF.Round(vectorY * maxPos), minNeg, maxPos) & 0xFFFF) << 0x10);
 
 			return (word2 | word1);
 		}

@@ -1,4 +1,4 @@
-// MonoGame - Copyright (C) The MonoGame Team
+// MonoGame - Copyright (C) MonoGame Foundation, Inc
 // This file is subject to the terms and conditions defined in
 // file 'LICENSE.txt', which is part of this source code package.
 
@@ -20,6 +20,8 @@ namespace Microsoft.Xna.Framework.Audio
         float filterQ;
         float frequency;
         int pauseCount;
+
+        internal readonly object sourceMutex = new object();
         
         internal OpenALSoundController controller;
         
@@ -66,13 +68,13 @@ namespace Microsoft.Xna.Framework.Audio
 
             // get the emitter offset from origin
             Vector3 posOffset = emitter.Position - listener.Position;
-            // set up orientation matrix
-            Matrix orientation = Matrix.CreateWorld(Vector3.Zero, listener.Forward, listener.Up);
+            // set up matrix to transform world space coordinates to listener space coordinates
+            Matrix worldSpaceToListenerSpace = Matrix.Transpose(Matrix.CreateWorld(Vector3.Zero, listener.Forward, listener.Up));
             // set up our final position and velocity according to orientation of listener
             Vector3 finalPos = new Vector3(x + posOffset.X, y + posOffset.Y, z + posOffset.Z);
-            finalPos = Vector3.Transform(finalPos, orientation);
-            Vector3 finalVel = emitter.Velocity;
-            finalVel = Vector3.Transform(finalVel, orientation);
+            finalPos = Vector3.Transform(finalPos, worldSpaceToListenerSpace);
+            Vector3 finalVel = emitter.Velocity - listener.Velocity;
+            finalVel = Vector3.Transform(finalVel, worldSpaceToListenerSpace);
 
             // set the position based on relative positon
             AL.Source(SourceId, ALSource3f.Position, finalPos.X, finalPos.Y, finalPos.Z);
@@ -102,8 +104,8 @@ namespace Microsoft.Xna.Framework.Audio
 
         private void PlatformPlay()
         {
-            SourceId = 0;
-            HasSourceId = false;
+            if (HasSourceId)
+                PlatformStop(true);
             SourceId = controller.ReserveSource();
             HasSourceId = true;
 
@@ -168,29 +170,34 @@ namespace Microsoft.Xna.Framework.Audio
         private void PlatformStop(bool immediate)
         {
             FreeSource();
+            if (pauseCount > 0) pauseCount = 0;
             SoundState = SoundState.Stopped;
         }
 
         private void FreeSource()
         {
-            if (HasSourceId)
+            if (!HasSourceId)
+                return;
+
+            lock (sourceMutex)
             {
-                AL.SourceStop(SourceId);
-                ALHelper.CheckError("Failed to stop source.");
-
-                // Reset the SendFilter to 0 if we are NOT using reverb since 
-                // sources are recycled
-                if (OpenALSoundController.Instance.SupportsEfx)
+                if (HasSourceId && AL.IsSource(SourceId))
                 {
-                    OpenALSoundController.Efx.BindSourceToAuxiliarySlot(SourceId, 0, 0, 0);
-                    ALHelper.CheckError("Failed to unset reverb.");
-                    AL.Source(SourceId, ALSourcei.EfxDirectFilter, 0);
-                    ALHelper.CheckError("Failed to unset filter.");
-                }
-                AL.Source(SourceId, ALSourcei.Buffer, 0);
-                ALHelper.CheckError("Failed to free source from buffer.");
+                    AL.SourceStop(SourceId);
+                    ALHelper.CheckError("Failed to stop source.");
 
-                controller.FreeSource(this);
+                    // Reset the SendFilter to 0 if we are NOT using reverb since
+                    // sources are recycled
+                    if (OpenALSoundController.Instance.SupportsEfx)
+                    {
+                        OpenALSoundController.Efx.BindSourceToAuxiliarySlot(SourceId, 0, 0, 0);
+                        ALHelper.CheckError("Failed to unset reverb.");
+                        AL.Source(SourceId, ALSourcei.EfxDirectFilter, 0);
+                        ALHelper.CheckError("Failed to unset filter.");
+                    }
+
+                    controller.FreeSource(this);
+                }
             }
         }
 

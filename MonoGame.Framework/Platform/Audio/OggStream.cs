@@ -1,7 +1,7 @@
 ﻿// This code originated from:
 //
 //    http://theinstructionlimit.com/ogg-streaming-using-opentk-and-nvorbis
-//    https://github.com/renaudbedard/nvorbis/
+//    https://github.com/NVorbis/NVorbis
 //
 // It was released to the public domain by the author (Renaud Bedard).
 // No other license is intended or required.
@@ -9,7 +9,6 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.IO;
 using System.Linq;
 using System.Threading;
 using NVorbis;
@@ -27,7 +26,6 @@ namespace Microsoft.Xna.Framework.Audio
         internal readonly int alSourceId;
         internal readonly int[] alBufferIds;
 
-        readonly int alFilterId;
         readonly string oggFileName;
 
         internal VorbisReader Reader { get; private set; }
@@ -54,17 +52,6 @@ namespace Microsoft.Xna.Framework.Audio
             }
 
             Volume = 1;
-
-            if (OggStreamer.Instance.Efx.IsInitialized)
-            {
-                alFilterId = OggStreamer.Instance.Efx.GenFilter();
-                ALHelper.CheckError("Failed to generate Efx filter.");
-                OggStreamer.Instance.Efx.Filter(alFilterId, EfxFilteri.FilterType, (int)EfxFilterType.Lowpass);
-                ALHelper.CheckError("Failed to set Efx filter type.");
-                OggStreamer.Instance.Efx.Filter(alFilterId, EfxFilterf.LowpassGain, 1);
-                ALHelper.CheckError("Failed to set Efx filter value.");
-                LowPassHFGain = 1;
-            }
         }
 
         public void Prepare()
@@ -172,7 +159,7 @@ namespace Microsoft.Xna.Framework.Audio
 
         public void SeekToPosition(TimeSpan pos)
         {
-            Reader.DecodedTime = pos;
+            Reader.TimePosition = pos;
             AL.SourceStop(alSourceId);
             ALHelper.CheckError("Failed to stop source.");
         }
@@ -182,28 +169,12 @@ namespace Microsoft.Xna.Framework.Audio
             if (Reader == null)
                 return TimeSpan.Zero;
 
-            return Reader.DecodedTime;
+            return Reader.TimePosition;
         }
 
         public TimeSpan GetLength()
         {
             return Reader.TotalTime;
-        }
-
-        float lowPassHfGain;
-        public float LowPassHFGain
-        {
-            get { return lowPassHfGain; }
-            set
-            {
-                if (OggStreamer.Instance.Efx.IsInitialized)
-                {
-                    OggStreamer.Instance.Efx.Filter(alFilterId, EfxFilterf.LowpassGainHF, lowPassHfGain = value);
-                    ALHelper.CheckError("Failed to set Efx filter.");
-                    OggStreamer.Instance.Efx.BindFilterToSource(alSourceId, alFilterId);
-                    ALHelper.CheckError("Failed to bind Efx filter to source.");
-                }
-            }
         }
 
         float volume;
@@ -236,18 +207,10 @@ namespace Microsoft.Xna.Framework.Audio
                 Close();
             }
 
-            AL.Source(alSourceId, ALSourcei.Buffer, 0);
-            ALHelper.CheckError("Failed to free source from buffers.");
             OpenALSoundController.Instance.RecycleSource(alSourceId);
+
             AL.DeleteBuffers(alBufferIds);
             ALHelper.CheckError("Failed to delete buffer.");
-            if (OggStreamer.Instance.Efx.IsInitialized)
-            {
-                OggStreamer.Instance.Efx.DeleteFilter(alFilterId);
-                ALHelper.CheckError("Failed to delete EFX filter.");
-            }
-
-
         }
 
         void StopPlayback()
@@ -320,7 +283,6 @@ namespace Microsoft.Xna.Framework.Audio
     internal class OggStreamer : IDisposable
     {
         public readonly XRamExtension XRam = new XRamExtension();
-        public readonly EffectsExtension Efx = OpenALSoundController.Efx;
 
         const float DefaultUpdateRate = 10;
         const int DefaultBufferSize = 44100;

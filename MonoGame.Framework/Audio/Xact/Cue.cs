@@ -1,4 +1,4 @@
-// MonoGame - Copyright (C) The MonoGame Team
+// MonoGame - Copyright (C) MonoGame Foundation, Inc
 // This file is subject to the terms and conditions defined in
 // file 'LICENSE.txt', which is part of this source code package.
 
@@ -46,7 +46,7 @@ namespace Microsoft.Xna.Framework.Audio
             get 
             {
                 if (_curSound != null)
-                    return _curSound.Playing;
+                    return _curSound.Playing || _curSound.IsPaused;
 
                 return false;
             }
@@ -255,7 +255,7 @@ namespace Microsoft.Xna.Framework.Audio
                     direction /= distance;
                 var right = Vector3.Cross(listener.Up, listener.Forward);
                 var slope = Vector3.Dot(direction, listener.Forward);
-                var angle = MathHelper.ToDegrees((float)Math.Acos(slope));
+                var angle = MathHelper.ToDegrees(MathF.Acos(slope));
                 var j = FindVariable("OrientationAngle");
                 _variables[j].SetValue(angle);
                 if (_curSound != null)

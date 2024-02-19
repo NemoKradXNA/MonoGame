@@ -1,4 +1,4 @@
-﻿// MonoGame - Copyright (C) The MonoGame Team
+﻿// MonoGame - Copyright (C) MonoGame Foundation, Inc
 // This file is subject to the terms and conditions defined in
 // file 'LICENSE.txt', which is part of this source code package.
 
@@ -146,7 +146,7 @@ namespace MonoGame.Framework
             ChangeClientSize(new Size(GraphicsDeviceManager.DefaultBackBufferWidth, GraphicsDeviceManager.DefaultBackBufferHeight));
 
             SetIcon();
-            Title = MonoGame.Utilities.AssemblyHelper.GetDefaultWindowTitle();
+            Title = MonoGame.Framework.Utilities.AssemblyHelper.GetDefaultWindowTitle();
 
             Form.MaximizeBox = false;
             Form.FormBorderStyle = FormBorderStyle.FixedSingle;
@@ -189,6 +189,9 @@ namespace MonoGame.Framework
         
         [DllImport("user32.dll", ExactSpelling=true, CharSet=CharSet.Auto)]
         internal static extern int MapWindowPoints(HandleRef hWndFrom, HandleRef hWndTo, out POINTSTRUCT pt, int cPoints);
+
+        [DllImport("shell32.dll")]
+        private static extern void DragAcceptFiles(IntPtr hwnd, bool fAccept);
 
         private void SetIcon()
         {
@@ -238,6 +241,8 @@ namespace MonoGame.Framework
         {
             _platform.IsActive = true;
             Keyboard.SetActive(true);
+
+            DragAcceptFiles(Handle, true); //allows drag and dropping
         }
 
         private void OnDeactivate(object sender, EventArgs eventArgs)

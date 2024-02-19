@@ -1,4 +1,4 @@
-﻿// MonoGame - Copyright (C) The MonoGame Team
+﻿// MonoGame - Copyright (C) MonoGame Foundation, Inc
 // This file is subject to the terms and conditions defined in
 // file 'LICENSE.txt', which is part of this source code package.
 
@@ -15,10 +15,10 @@ namespace Microsoft.Xna.Framework.Graphics.PackedVector
 
         private static UInt16 Pack(float x, float y, float z, float w)
         {
-            return (UInt16) ((((int) Math.Round(MathHelper.Clamp(w, 0, 1) * 15.0f) & 0x0F) << 12) |
-                (((int) Math.Round(MathHelper.Clamp(x, 0, 1) * 15.0f) & 0x0F) << 8) |
-                (((int) Math.Round(MathHelper.Clamp(y, 0, 1) * 15.0f) & 0x0F) << 4) |
-                ((int) Math.Round(MathHelper.Clamp(z, 0, 1) * 15.0f) & 0x0F));
+            return (UInt16) ((((int) MathF.Round(MathHelper.Clamp(w, 0, 1) * 15.0f) & 0x0F) << 12) |
+                (((int) MathF.Round(MathHelper.Clamp(x, 0, 1) * 15.0f) & 0x0F) << 8) |
+                (((int) MathF.Round(MathHelper.Clamp(y, 0, 1) * 15.0f) & 0x0F) << 4) |
+                ((int) MathF.Round(MathHelper.Clamp(z, 0, 1) * 15.0f) & 0x0F));
         }
 
         /// <summary>
@@ -45,7 +45,6 @@ namespace Microsoft.Xna.Framework.Graphics.PackedVector
         /// <summary>
         /// Gets and sets the packed value.
         /// </summary>
-        [CLSCompliant(false)]
         public UInt16 PackedValue
         {
             get

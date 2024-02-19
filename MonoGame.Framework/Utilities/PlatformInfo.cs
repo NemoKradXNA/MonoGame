@@ -1,4 +1,4 @@
-﻿// MonoGame - Copyright (C) The MonoGame Team
+﻿// MonoGame - Copyright (C) MonoGame Foundation, Inc
 // This file is subject to the terms and conditions defined in
 // file 'LICENSE.txt', which is part of this source code package.
 
@@ -36,8 +36,10 @@ namespace MonoGame.Framework.Utilities
                 return MonoGamePlatform.XboxOne;
 #elif PLAYSTATION4
                 return MonoGamePlatform.PlayStation4;
-#elif PSVITA
-                return MonoGamePlatform.PSVita;
+#elif PLAYSTATION5
+                return MonoGamePlatform.PlayStation5;
+#elif STADIA
+                return MonoGamePlatform.Stadia;
 #endif
             }
         }

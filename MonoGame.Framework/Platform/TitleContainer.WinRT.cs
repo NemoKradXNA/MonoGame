@@ -1,4 +1,4 @@
-// MonoGame - Copyright (C) The MonoGame Team
+// MonoGame - Copyright (C) MonoGame Foundation, Inc
 // This file is subject to the terms and conditions defined in
 // file 'LICENSE.txt', which is part of this source code package.
 
@@ -24,26 +24,15 @@ namespace Microsoft.Xna.Framework
 
         private static async Task<Stream> OpenStreamAsync(string name)
         {
-            NamedResource result;
-
-            if (FileResourceMap != null && FileResourceMap.TryGetValue(name, out result))
+            try
             {
-                var resolved = result.Resolve(ResourceContext);
-
-                try
-                {
-                    var storageFile = await resolved.GetValueAsFileAsync();
-                    var randomAccessStream = await storageFile.OpenReadAsync();
-                    return randomAccessStream.AsStreamForRead();
-                }
-                catch (IOException)
-                {
-                    // The file must not exist... return a null stream.
-                    return null;
-                }
+                var file = await Windows.Storage.StorageFile.GetFileFromApplicationUriAsync(new Uri("ms-appx:///" + name));
+                var randomAccessStream = await file.OpenReadAsync();
+                return randomAccessStream.AsStreamForRead();
             }
-            else
+            catch (IOException)
             {
+                // The file must not exist... return a null stream.
                 return null;
             }
         }

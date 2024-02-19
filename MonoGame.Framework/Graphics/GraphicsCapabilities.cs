@@ -1,4 +1,4 @@
-// MonoGame - Copyright (C) The MonoGame Team
+// MonoGame - Copyright (C) MonoGame Foundation, Inc
 // This file is subject to the terms and conditions defined in
 // file 'LICENSE.txt', which is part of this source code package.
 
@@ -55,6 +55,11 @@ namespace Microsoft.Xna.Framework.Graphics
         /// Gets the support for ETC1
         /// </summary>
         internal bool SupportsEtc1 { get; private set; }
+
+        /// <summary>
+        /// Gets the support for ETC2
+        /// </summary>
+        internal bool SupportsEtc2 { get; private set; }
 
         /// <summary>
         /// Gets the support for ATITC
@@ -116,6 +121,8 @@ namespace Microsoft.Xna.Framework.Graphics
         }
 
         internal bool SupportsInstancing { get; private set; }
+
+        internal bool SupportsBaseIndexInstancing { get; private set; }
 
         internal bool SupportsSeparateBlendStates { get; private set; }
     }

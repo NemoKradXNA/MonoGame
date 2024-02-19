@@ -1,4 +1,4 @@
-﻿// MonoGame - Copyright (C) The MonoGame Team
+﻿// MonoGame - Copyright (C) MonoGame Foundation, Inc
 // This file is subject to the terms and conditions defined in
 // file 'LICENSE.txt', which is part of this source code package.
 
@@ -61,7 +61,6 @@ namespace Microsoft.Xna.Framework.Graphics.PackedVector
         /// Directly gets or sets the packed representation of the value.
         /// </summary>
         /// <value>The packed representation of the value.</value>
-        [CLSCompliant(false)]
         public uint PackedValue
         {
             get
@@ -125,10 +124,10 @@ namespace Microsoft.Xna.Framework.Graphics.PackedVector
             const float min = 0.0f;
 
             // clamp the value between min and max values
-            var byte4 = (uint) Math.Round(MathHelper.Clamp(vector.X, min, max)) & 0xFF;
-            var byte3 = ((uint) Math.Round(MathHelper.Clamp(vector.Y, min, max)) & 0xFF) << 0x8;
-            var byte2 = ((uint) Math.Round(MathHelper.Clamp(vector.Z, min, max)) & 0xFF) << 0x10;
-            var byte1 = ((uint) Math.Round(MathHelper.Clamp(vector.W, min, max)) & 0xFF) << 0x18;
+            var byte4 = (uint) MathF.Round(MathHelper.Clamp(vector.X, min, max)) & 0xFF;
+            var byte3 = ((uint) MathF.Round(MathHelper.Clamp(vector.Y, min, max)) & 0xFF) << 0x8;
+            var byte2 = ((uint) MathF.Round(MathHelper.Clamp(vector.Z, min, max)) & 0xFF) << 0x10;
+            var byte1 = ((uint) MathF.Round(MathHelper.Clamp(vector.W, min, max)) & 0xFF) << 0x18;
 
             return byte4 | byte3 | byte2 | byte1;
         }

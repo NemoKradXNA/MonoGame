@@ -1,4 +1,4 @@
-// MonoGame - Copyright (C) The MonoGame Team
+// MonoGame - Copyright (C) MonoGame Foundation, Inc
 // This file is subject to the terms and conditions defined in
 // file 'LICENSE.txt', which is part of this source code package.
 
@@ -41,7 +41,7 @@ namespace MonoGame.Framework
         static public T Create(Func<T> gameConstructor, string launchParameters, CoreWindow window, SwapChainPanel swapChainPanel)
         {
             if (gameConstructor == null)
-                throw new NullReferenceException(nameof(gameConstructor));
+                throw new NullReferenceException("gameConstructor");
             if (launchParameters == null)
                 throw new NullReferenceException("The launch parameters cannot be null!");
             if (window == null)

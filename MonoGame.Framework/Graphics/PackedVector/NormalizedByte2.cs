@@ -1,4 +1,4 @@
-// MonoGame - Copyright (C) The MonoGame Team
+// MonoGame - Copyright (C) MonoGame Foundation, Inc
 // This file is subject to the terms and conditions defined in
 // file 'LICENSE.txt', which is part of this source code package.
 
@@ -31,7 +31,6 @@ namespace Microsoft.Xna.Framework.Graphics.PackedVector
             return a._packed == b._packed;
         }
 
-        [CLSCompliant(false)]
         public ushort PackedValue
         {
             get
@@ -67,8 +66,8 @@ namespace Microsoft.Xna.Framework.Graphics.PackedVector
 
         private static ushort Pack(float x, float y)
         {
-            var byte2 = (((ushort) Math.Round(MathHelper.Clamp(x, -1.0f, 1.0f) * 127.0f)) & 0xFF) << 0;
-            var byte1 = (((ushort) Math.Round(MathHelper.Clamp(y, -1.0f, 1.0f) * 127.0f)) & 0xFF) << 8;
+            var byte2 = (((ushort) MathF.Round(MathHelper.Clamp(x, -1.0f, 1.0f) * 127.0f)) & 0xFF) << 0;
+            var byte1 = (((ushort) MathF.Round(MathHelper.Clamp(y, -1.0f, 1.0f) * 127.0f)) & 0xFF) << 8;
 
             return (ushort)(byte2 | byte1);
         }

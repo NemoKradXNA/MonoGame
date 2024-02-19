@@ -1,4 +1,4 @@
-// MonoGame - Copyright (C) The MonoGame Team
+// MonoGame - Copyright (C) MonoGame Foundation, Inc
 // This file is subject to the terms and conditions defined in
 // file 'LICENSE.txt', which is part of this source code package.
 
@@ -116,6 +116,7 @@ namespace Microsoft.Xna.Framework.Graphics
         static readonly float[] _posFixup = new float[4];
 
         private static BufferBindingInfo[] _bufferBindingInfos;
+        private static int _activeBufferBindingInfosCount;
         private static bool[] _newEnabledVertexAttributes;
         internal static readonly List<int> _enabledVertexAttributes = new List<int>();
         internal static bool _attribsDirty;
@@ -187,6 +188,7 @@ namespace Microsoft.Xna.Framework.Graphics
                 var offset = (IntPtr)(vertexDeclaration.VertexStride * (baseVertex + vertexBufferBinding.VertexOffset));
 
                 if (!_attribsDirty &&
+                    slot < _activeBufferBindingInfosCount &&
                     _bufferBindingInfos[slot].VertexOffset == offset &&
                     ReferenceEquals(_bufferBindingInfos[slot].AttributeInfo, attrInfo) &&
                     _bufferBindingInfos[slot].InstanceFrequency == vertexBufferBinding.InstanceFrequency &&
@@ -234,6 +236,7 @@ namespace Microsoft.Xna.Framework.Graphics
                     foreach (var element in _bufferBindingInfos[slot].AttributeInfo.Elements)
                         _newEnabledVertexAttributes[element.AttributeLocation] = true;
                 }
+                _activeBufferBindingInfosCount = _vertexBuffers.Count;
             }
             SetVertexAttributeArray(_newEnabledVertexAttributes);
         }
@@ -254,9 +257,7 @@ namespace Microsoft.Xna.Framework.Graphics
 
             Context.MakeCurrent(windowInfo);
 #endif
-            MaxTextureSlots = 16;
-
-            GL.GetInteger(GetPName.MaxTextureImageUnits, out MaxTextureSlots);
+            GL.GetInteger(GetPName.MaxCombinedTextureImageUnits, out MaxTextureSlots);
             GraphicsExtensions.CheckGLError();
 
             GL.GetInteger(GetPName.MaxTextureSize, out _maxTextureSize);
@@ -355,7 +356,7 @@ namespace Microsoft.Xna.Framework.Graphics
         
         private DepthStencilState clearDepthStencilState = new DepthStencilState { StencilEnable = true };
 
-        public void PlatformClear(ClearOptions options, Vector4 color, float depth, int stencil)
+        private void PlatformClear(ClearOptions options, Vector4 color, float depth, int stencil)
         {
             // TODO: We need to figure out how to detect if we have a
             // depth stencil buffer or not, and clear options relating
@@ -415,13 +416,13 @@ namespace Microsoft.Xna.Framework.Graphics
 				bufferMask = bufferMask | ClearBufferMask.DepthBufferBit;
 			}
 
-#if MONOMAC
+#if MONOMAC || IOS
             if (GL.CheckFramebufferStatus(FramebufferTarget.FramebufferExt) == FramebufferErrorCode.FramebufferComplete)
             {
 #endif
                 GL.Clear(bufferMask);
                 GraphicsExtensions.CheckGLError();
-#if MONOMAC
+#if MONOMAC || IOS
             }
 #endif
            		
@@ -529,7 +530,7 @@ namespace Microsoft.Xna.Framework.Graphics
         }
 #endif
 
-        public void PlatformPresent()
+        private void PlatformPresent()
         {
 #if DESKTOPGL || ANGLE
             Context.SwapBuffers();
@@ -871,6 +872,8 @@ namespace Microsoft.Xna.Framework.Graphics
         {
             switch (primitiveType)
             {
+                case PrimitiveType.PointList:
+                    return GLPrimitiveType.Points;
                 case PrimitiveType.LineList:
                     return GLPrimitiveType.Lines;
                 case PrimitiveType.LineStrip:
@@ -1066,7 +1069,9 @@ namespace Microsoft.Xna.Framework.Graphics
             GraphicsExtensions.CheckGLError();
         }
 
-        private void PlatformDrawUserPrimitives<T>(PrimitiveType primitiveType, T[] vertexData, int vertexOffset, VertexDeclaration vertexDeclaration, int vertexCount) where T : struct
+        private void PlatformDrawUserPrimitives<T>(
+            PrimitiveType primitiveType, T[] vertexData, int vertexOffset, VertexDeclaration vertexDeclaration, int vertexCount)
+            where T : struct
         {
             ApplyState(true);
 
@@ -1079,19 +1084,23 @@ namespace Microsoft.Xna.Framework.Graphics
 
             // Pin the buffers.
             var vbHandle = GCHandle.Alloc(vertexData, GCHandleType.Pinned);
+            try
+            {
+                // Setup the vertex declaration to point at the VB data.
+                vertexDeclaration.GraphicsDevice = this;
+                vertexDeclaration.Apply(_vertexShader, vbHandle.AddrOfPinnedObject(), ShaderProgramHash);
 
-            // Setup the vertex declaration to point at the VB data.
-            vertexDeclaration.GraphicsDevice = this;
-            vertexDeclaration.Apply(_vertexShader, vbHandle.AddrOfPinnedObject(), ShaderProgramHash);
-
-            //Draw
-            GL.DrawArrays(PrimitiveTypeGL(primitiveType),
-                          vertexOffset,
-                          vertexCount);
-            GraphicsExtensions.CheckGLError();
-
-            // Release the handles.
-            vbHandle.Free();
+                //Draw
+                GL.DrawArrays(PrimitiveTypeGL(primitiveType),
+                              vertexOffset,
+                              vertexCount);
+                GraphicsExtensions.CheckGLError();
+            }
+            finally
+            {
+                // Release the handles.
+                vbHandle.Free();
+            }
         }
 
         private void PlatformDrawPrimitives(PrimitiveType primitiveType, int vertexStart, int vertexCount)
@@ -1109,7 +1118,9 @@ namespace Microsoft.Xna.Framework.Graphics
             GraphicsExtensions.CheckGLError();
         }
 
-        private void PlatformDrawUserIndexedPrimitives<T>(PrimitiveType primitiveType, T[] vertexData, int vertexOffset, int numVertices, short[] indexData, int indexOffset, int primitiveCount, VertexDeclaration vertexDeclaration) where T : struct
+        private void PlatformDrawUserIndexedPrimitives<T>(
+            PrimitiveType primitiveType, T[] vertexData, int vertexOffset, int numVertices, short[] indexData, int indexOffset, int primitiveCount, VertexDeclaration vertexDeclaration)
+            where T : struct
         {
             ApplyState(true);
 
@@ -1123,26 +1134,33 @@ namespace Microsoft.Xna.Framework.Graphics
             // Pin the buffers.
             var vbHandle = GCHandle.Alloc(vertexData, GCHandleType.Pinned);
             var ibHandle = GCHandle.Alloc(indexData, GCHandleType.Pinned);
+            try
+            {
+                var vertexAddr = (IntPtr)(vbHandle.AddrOfPinnedObject().ToInt64() + vertexDeclaration.VertexStride * vertexOffset);
 
-            var vertexAddr = (IntPtr)(vbHandle.AddrOfPinnedObject().ToInt64() + vertexDeclaration.VertexStride * vertexOffset);
+                // Setup the vertex declaration to point at the VB data.
+                vertexDeclaration.GraphicsDevice = this;
+                vertexDeclaration.Apply(_vertexShader, vertexAddr, ShaderProgramHash);
 
-            // Setup the vertex declaration to point at the VB data.
-            vertexDeclaration.GraphicsDevice = this;
-            vertexDeclaration.Apply(_vertexShader, vertexAddr, ShaderProgramHash);
-
-            //Draw
-            GL.DrawElements(    PrimitiveTypeGL(primitiveType),
-                                GetElementCountArray(primitiveType, primitiveCount),
-                                DrawElementsType.UnsignedShort,
-                                (IntPtr)(ibHandle.AddrOfPinnedObject().ToInt64() + (indexOffset * sizeof(short))));
-            GraphicsExtensions.CheckGLError();
-
-            // Release the handles.
-            ibHandle.Free();
-            vbHandle.Free();
+                //Draw
+                GL.DrawElements(
+                    PrimitiveTypeGL(primitiveType),
+                    GetElementCountArray(primitiveType, primitiveCount),
+                    DrawElementsType.UnsignedShort,
+                    (IntPtr)(ibHandle.AddrOfPinnedObject().ToInt64() + (indexOffset * sizeof(short))));
+                GraphicsExtensions.CheckGLError();
+            }
+            finally
+            {
+                // Release the handles.
+                ibHandle.Free();
+                vbHandle.Free();
+            }
         }
 
-        private void PlatformDrawUserIndexedPrimitives<T>(PrimitiveType primitiveType, T[] vertexData, int vertexOffset, int numVertices, int[] indexData, int indexOffset, int primitiveCount, VertexDeclaration vertexDeclaration) where T : struct
+        private void PlatformDrawUserIndexedPrimitives<T>(
+            PrimitiveType primitiveType, T[] vertexData, int vertexOffset, int numVertices, int[] indexData, int indexOffset, int primitiveCount, VertexDeclaration vertexDeclaration)
+            where T : struct
         {
             ApplyState(true);
 
@@ -1156,26 +1174,31 @@ namespace Microsoft.Xna.Framework.Graphics
             // Pin the buffers.
             var vbHandle = GCHandle.Alloc(vertexData, GCHandleType.Pinned);
             var ibHandle = GCHandle.Alloc(indexData, GCHandleType.Pinned);
+            try
+            {
+                var vertexAddr = (IntPtr)(vbHandle.AddrOfPinnedObject().ToInt64() + vertexDeclaration.VertexStride * vertexOffset);
 
-            var vertexAddr = (IntPtr)(vbHandle.AddrOfPinnedObject().ToInt64() + vertexDeclaration.VertexStride * vertexOffset);
+                // Setup the vertex declaration to point at the VB data.
+                vertexDeclaration.GraphicsDevice = this;
+                vertexDeclaration.Apply(_vertexShader, vertexAddr, ShaderProgramHash);
 
-            // Setup the vertex declaration to point at the VB data.
-            vertexDeclaration.GraphicsDevice = this;
-            vertexDeclaration.Apply(_vertexShader, vertexAddr, ShaderProgramHash);
-
-            //Draw
-            GL.DrawElements(    PrimitiveTypeGL(primitiveType),
-                                GetElementCountArray(primitiveType, primitiveCount),
-                                DrawElementsType.UnsignedInt,
-                                (IntPtr)(ibHandle.AddrOfPinnedObject().ToInt64() + (indexOffset * sizeof(int))));
-            GraphicsExtensions.CheckGLError();
-
-            // Release the handles.
-            ibHandle.Free();
-            vbHandle.Free();
+                //Draw
+                GL.DrawElements(
+                    PrimitiveTypeGL(primitiveType),
+                    GetElementCountArray(primitiveType, primitiveCount),
+                    DrawElementsType.UnsignedInt,
+                    (IntPtr)(ibHandle.AddrOfPinnedObject().ToInt64() + (indexOffset * sizeof(int))));
+                GraphicsExtensions.CheckGLError();
+            }
+            finally
+            {
+                // Release the handles.
+                ibHandle.Free();
+                vbHandle.Free();
+            }
         }
 
-        private void PlatformDrawInstancedPrimitives(PrimitiveType primitiveType, int baseVertex, int startIndex, int primitiveCount, int instanceCount)
+        private void PlatformDrawInstancedPrimitives(PrimitiveType primitiveType, int baseVertex, int startIndex, int primitiveCount, int baseInstance, int instanceCount)
         {
             if (!GraphicsCapabilities.SupportsInstancing)
                 throw new PlatformNotSupportedException("Instanced geometry drawing requires at least OpenGL 3.2 or GLES 3.2. Try upgrading your graphics card drivers.");
@@ -1191,18 +1214,32 @@ namespace Microsoft.Xna.Framework.Graphics
 
             ApplyAttribs(_vertexShader, baseVertex);
 
-            GL.DrawElementsInstanced(target,
+            if (baseInstance > 0)
+            {
+                if (!GraphicsCapabilities.SupportsBaseIndexInstancing)
+                    throw new PlatformNotSupportedException("Instanced geometry drawing with base instance requires at least OpenGL 4.2. Try upgrading your graphics card drivers.");
+
+                GL.DrawElementsInstancedBaseInstance(target,
+                                          indexElementCount,
+                                          indexElementType,
+                                          indexOffsetInBytes,
+                                          instanceCount,
+                                          baseInstance);
+            }
+            else
+                GL.DrawElementsInstanced(target,
                                      indexElementCount,
                                      indexElementType,
                                      indexOffsetInBytes,
                                      instanceCount);
+
             GraphicsExtensions.CheckGLError();
         }
 
         private void PlatformGetBackBufferData<T>(Rectangle? rectangle, T[] data, int startIndex, int count) where T : struct
         {
             var rect = rectangle ?? new Rectangle(0, 0, PresentationParameters.BackBufferWidth, PresentationParameters.BackBufferHeight);
-            var tSize = Marshal.SizeOf(typeof(T));
+            var tSize = Marshal.SizeOf<T>();
             var flippedY = PresentationParameters.BackBufferHeight - rect.Y - rect.Height;
             GL.ReadPixels(rect.X, flippedY, rect.Width, rect.Height, PixelFormat.Rgba, PixelType.UnsignedByte, data);
 

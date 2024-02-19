@@ -1,4 +1,4 @@
-﻿// MonoGame - Copyright (C) The MonoGame Team
+﻿// MonoGame - Copyright (C) MonoGame Foundation, Inc
 // This file is subject to the terms and conditions defined in
 // file 'LICENSE.txt', which is part of this source code package.
 
@@ -89,9 +89,9 @@ namespace Microsoft.Xna.Framework.Audio
             }
 
             // Queue the buffer
+            _queuedBuffers.Enqueue(oalBuffer);
             AL.SourceQueueBuffer(SourceId, oalBuffer.OpenALDataBuffer);
             ALHelper.CheckError();
-            _queuedBuffers.Enqueue(oalBuffer);
 
             // If the source has run out of buffers, restart it
             var sourceState = AL.GetSourceState(SourceId);
@@ -104,16 +104,9 @@ namespace Microsoft.Xna.Framework.Audio
 
         private void PlatformDispose(bool disposing)
         {
-            // Stop the source and bind null buffer so that it can be recycled
-            AL.GetError();
-            if (AL.IsSource(SourceId))
-            {
-                AL.SourceStop(SourceId);
-                AL.Source(SourceId, ALSourcei.Buffer, 0);
-                ALHelper.CheckError("Failed to stop the source.");
-                controller.RecycleSource(SourceId);
-            }
-            
+            // SFXI disposal handles buffer detachment and source recycling
+            base.Dispose(disposing);
+
             if (disposing)
             {
                 while (_queuedBuffers.Count > 0)

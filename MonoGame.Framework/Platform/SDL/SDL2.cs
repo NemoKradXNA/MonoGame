@@ -1,4 +1,4 @@
-﻿// MonoGame - Copyright (C) The MonoGame Team
+﻿// MonoGame - Copyright (C) MonoGame Foundation, Inc
 // This file is subject to the terms and conditions defined in
 // file 'LICENSE.txt', which is part of this source code package.
 
@@ -7,7 +7,7 @@ using System.IO;
 using System.Text;
 using System.Runtime.InteropServices;
 using System.Diagnostics;
-using MonoGame.Utilities;
+using MonoGame.Framework.Utilities;
 
 internal static class Sdl
 {
@@ -15,54 +15,17 @@ internal static class Sdl
 
     private static IntPtr GetNativeLibrary()
     {
-        var ret = IntPtr.Zero;
-
-        // Load bundled library
-        var assemblyLocation = Path.GetDirectoryName(typeof(Sdl).Assembly.Location);
-        if (CurrentPlatform.OS == OS.Windows && Environment.Is64BitProcess)
-            ret = FuncLoader.LoadLibrary(Path.Combine(assemblyLocation, "x64/SDL2.dll"));
-        else if (CurrentPlatform.OS == OS.Windows && !Environment.Is64BitProcess)
-            ret = FuncLoader.LoadLibrary(Path.Combine(assemblyLocation, "x86/SDL2.dll"));
-        else if (CurrentPlatform.OS == OS.Linux && Environment.Is64BitProcess)
-            ret = FuncLoader.LoadLibrary(Path.Combine(assemblyLocation, "x64/libSDL2-2.0.so.0"));
-        else if (CurrentPlatform.OS == OS.Linux && !Environment.Is64BitProcess)
-            ret = FuncLoader.LoadLibrary(Path.Combine(assemblyLocation, "x86/libSDL2-2.0.so.0"));
-        else if (CurrentPlatform.OS == OS.MacOSX)
-            ret = FuncLoader.LoadLibrary(Path.Combine(assemblyLocation, "libSDL2-2.0.0.dylib"));
-
-        // Load system library
-        if (ret == IntPtr.Zero)
-        {
-            if (CurrentPlatform.OS == OS.Windows)
-                ret = FuncLoader.LoadLibrary("SDL2.dll");
-            else if (CurrentPlatform.OS == OS.Linux)
-                ret = FuncLoader.LoadLibrary("libSDL2-2.0.so.0");
-            else
-                ret = FuncLoader.LoadLibrary("libSDL2-2.0.0.dylib");
-        }
-
-        // Try extra locations for Windows because of .NET Core rids
         if (CurrentPlatform.OS == OS.Windows)
-        {
-            var rid = Environment.Is64BitProcess ? "win-x64" : "win-x86";
-
-            if (ret == IntPtr.Zero)
-                ret = FuncLoader.LoadLibrary(Path.Combine(assemblyLocation, "../../runtimes", rid, "native/SDL2.dll"));
-
-            if (ret == IntPtr.Zero)
-                ret = FuncLoader.LoadLibrary(Path.Combine(assemblyLocation, "runtimes", rid, "native/SDL2.dll"));
-        }
-
-        // Welp, all failed, PANIC!!!
-        if (ret == IntPtr.Zero)
-            throw new Exception("Failed to load SDL library.");
-
-        return ret;
+            return FuncLoader.LoadLibraryExt("SDL2.dll");
+        else if (CurrentPlatform.OS == OS.Linux)
+            return FuncLoader.LoadLibraryExt("libSDL2-2.0.so.0");
+        else if (CurrentPlatform.OS == OS.MacOSX)
+            return FuncLoader.LoadLibraryExt("libSDL2.dylib");
+        else
+            return FuncLoader.LoadLibraryExt("sdl2");
     }
 
-    public static int Major;
-    public static int Minor;
-    public static int Patch;
+    public static Version version;
 
     [Flags]
     public enum InitFlags
@@ -118,6 +81,9 @@ internal static class Sdl
         ClipboardUpdate = 0x900,
 
         DropFile = 0x1000,
+        DropText = 0x1001,
+        DropBegin = 0x1002,
+        DropComplete = 0x1003,
 
         AudioDeviceAdded = 0x1100,
         AudioDeviceRemoved = 0x1101,
@@ -158,6 +124,8 @@ internal static class Sdl
         public Joystick.DeviceEvent JoystickDevice;
         [FieldOffset(0)]
         public GameController.DeviceEvent ControllerDevice;
+        [FieldOffset(0)]
+        public Drop.Event Drop;
     }
 
     public struct Rectangle
@@ -173,6 +141,78 @@ internal static class Sdl
         public byte Major;
         public byte Minor;
         public byte Patch;
+
+        public static bool operator >(Version version1, Version version2)
+        {
+            return ConcatenateVersion(version1) > ConcatenateVersion(version2);
+        }
+
+        public static bool operator <(Version version1, Version version2)
+        {
+            return ConcatenateVersion(version1) < ConcatenateVersion(version2);
+        }
+
+
+        public static bool operator ==(Version version1, Version version2)
+        {
+            return version1.Major == version2.Major &&
+                version1.Minor == version2.Minor &&
+                version1.Patch == version2.Patch;
+        }
+
+        public override bool Equals(object obj)
+        {
+            if (!(obj is Version))
+                return false;
+
+            return version == (Version)obj;
+        }
+
+        public override int GetHashCode()
+        {
+            unchecked
+            {
+                int hash = 17;
+                hash = hash * 23 + Major.GetHashCode();
+                hash = hash * 23 + Minor.GetHashCode();
+                hash = hash * 23 + Patch.GetHashCode();
+                return hash;
+            }
+        }
+
+        public static bool operator !=(Version version1, Version version2)
+        {
+            return !(version1 == version2);
+        }
+
+        public static bool operator >=(Version version1, Version version2)
+        {
+            return version1 == version2 || version1 > version2;
+        }
+
+        public static bool operator <=(Version version1, Version version2)
+        {
+            return version1 == version2 || version1 < version2;
+        }
+
+        public override string ToString()
+        {
+            return Major + "." + Minor + "." + Patch;
+        }
+
+        private static int ConcatenateVersion(Version version)
+        {
+            // Account for a change in SDL2 version convention. After version 2.0.22,
+            // SDL switched formats from 2.0.x to 2.x.y (with y being optional)
+            if (version.Major == 2 && version.Minor == 0 && version.Patch < 23)
+            {
+                return version.Major * 1_000_000 + version.Patch * 1000;
+            }
+            else
+            {
+                return version.Major * 1_000_000 + version.Minor * 1000 + version.Patch;
+            }
+        }
     }
 
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
@@ -437,7 +477,7 @@ internal static class Sdl
 
         public static void SetTitle(IntPtr handle, string title)
         {
-            var bytes = Encoding.UTF8.GetBytes(title);
+            var bytes = Encoding.UTF8.GetBytes(title + '\0');
             SDL_SetWindowTitle(handle, ref bytes[0]);
         }
 
@@ -833,6 +873,15 @@ internal static class Sdl
         public static d_sdl_joystickgetbutton GetButton = FuncLoader.LoadFunction<d_sdl_joystickgetbutton>(NativeLibrary, "SDL_JoystickGetButton");
 
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+        private delegate IntPtr d_sdl_joystickname(IntPtr joystick);
+        private static d_sdl_joystickname JoystickName = FuncLoader.LoadFunction<d_sdl_joystickname>(NativeLibrary, "SDL_JoystickName");
+
+        public static string GetJoystickName(IntPtr joystick)
+        {
+            return InteropHelpers.Utf8ToString(JoystickName(joystick));
+        }
+
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
         public delegate Guid d_sdl_joystickgetguid(IntPtr joystick);
         public static d_sdl_joystickgetguid GetGUID = FuncLoader.LoadFunction<d_sdl_joystickgetguid>(NativeLibrary, "SDL_JoystickGetGUID");
 
@@ -934,6 +983,10 @@ internal static class Sdl
         }
 
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+        public delegate void d_sdl_free(IntPtr ptr);
+        public static d_sdl_free SDL_Free = FuncLoader.LoadFunction<d_sdl_free>(NativeLibrary, "SDL_free");
+
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
         public delegate int d_sdl_gamecontrolleraddmapping(string mappingString);
         public static d_sdl_gamecontrolleraddmapping AddMapping = FuncLoader.LoadFunction<d_sdl_gamecontrolleraddmapping>(NativeLibrary, "SDL_GameControllerAddMapping");
 
@@ -981,7 +1034,16 @@ internal static class Sdl
 
         public static string GetMapping(IntPtr gamecontroller)
         {
-            return InteropHelpers.Utf8ToString(SDL_GameControllerMapping(gamecontroller));
+            IntPtr nativeStr = SDL_GameControllerMapping(gamecontroller);
+            if (nativeStr == IntPtr.Zero)
+                return string.Empty;
+
+            string mappingStr = InteropHelpers.Utf8ToString(nativeStr);
+
+            //The mapping string returned by SDL is owned by us and thus must be freed
+            SDL_Free(nativeStr);
+
+            return mappingStr;
         }
 
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
@@ -1001,13 +1063,23 @@ internal static class Sdl
         {
             return InteropHelpers.Utf8ToString(SDL_GameControllerName(gamecontroller));
         }
+
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+        public delegate int d_sdl_gamecontrollerrumble(IntPtr gamecontroller, ushort left, ushort right, uint duration);
+        public static d_sdl_gamecontrollerrumble Rumble = FuncLoader.LoadFunction<d_sdl_gamecontrollerrumble>(NativeLibrary, "SDL_GameControllerRumble");
+        public static d_sdl_gamecontrollerrumble RumbleTriggers = FuncLoader.LoadFunction<d_sdl_gamecontrollerrumble>(NativeLibrary, "SDL_GameControllerRumbleTriggers");
+
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+        public delegate byte d_sdl_gamecontrollerhasrumble(IntPtr gamecontroller);
+        public static d_sdl_gamecontrollerhasrumble HasRumble = FuncLoader.LoadFunction<d_sdl_gamecontrollerhasrumble>(NativeLibrary, "SDL_GameControllerHasRumble");
+        public static d_sdl_gamecontrollerhasrumble HasRumbleTriggers = FuncLoader.LoadFunction<d_sdl_gamecontrollerhasrumble>(NativeLibrary, "SDL_GameControllerHasRumbleTriggers");
     }
 
     public static class Haptic
     {
-        // For some reason, different game controllers have different maximum value supported
-        // Also, the more the value is close to their limit, the more they tend to randomly ignore it
-        // Hence, we're setting an abitrary safe value as a maximum
+        // For some reason, different game controllers support different maximum values
+        // Also, the closer a given value is to the maximum, the more likely the value will be ignored
+        // Hence, we're setting an arbitrary safe value as a maximum
         public const uint Infinity = 1000000U;
 
         public enum EffectId : ushort
@@ -1118,5 +1190,21 @@ internal static class Sdl
         {
             GetError(SDL_HapticUpdateEffect(haptic, effect, ref data));
         }
+    }
+
+    public static class Drop
+    {
+        [StructLayout(LayoutKind.Sequential)]
+        public unsafe struct Event
+        {
+            public EventType Type;
+            public uint TimeStamp;
+            public IntPtr File;
+            public uint WindowId;
+        }
+
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+        public unsafe delegate void d_sdl_free(IntPtr ptr);
+        public static d_sdl_free SDL_Free = FuncLoader.LoadFunction<d_sdl_free>(NativeLibrary, "SDL_free");
     }
 }
